@@ -4,7 +4,7 @@ dotenv.config();
 
 const TOKEN = process.env.DISCORD_USER_TOKEN; // Set your user token in a .env file
 const EMOJI = '💀';
-const KEYWORDS = ["keyword1", "pattern2", "another word"]; // Add your keywords
+const KEYWORDS = ["hi", "bye", "nigga"]; // Add your keywords
 const TARGET_CHANNEL_ID = process.env.TARGET_CHANNEL_ID; // Optional: Set in .env for a specific channel
 
 const client = new Client({
