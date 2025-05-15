@@ -3,40 +3,36 @@ import asyncio
 
 TOKEN = 'YOUR_USER_TOKEN_HERE'  # Replace with your Discord user token
 EMOJI = "💀"
-REACTION_COUNT = 20
-TARGET_MESSAGE_ID = YOUR_TARGET_MESSAGE_ID_HERE  # Replace with the ID of the message you want to react to
-TARGET_CHANNEL_ID = YOUR_TARGET_CHANNEL_ID_HERE  # Replace with the ID of the channel containing the message
+KEYWORDS = ["keyword1", "pattern2", "another word"]  # Add the keywords or patterns you want to trigger the reaction
+TARGET_CHANNEL_ID = YOUR_TARGET_CHANNEL_ID_HERE  # Optional: Limit to a specific channel, remove if you want to listen everywhere
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user} (ID: {client.user.id})')
-    await react_to_message()
-    await client.close()  # Close the connection after reacting
+    print(f'Logged in as {client.user}')
 
-async def react_to_message():
-    try:
-        channel = client.get_channel(TARGET_CHANNEL_ID)
-        if channel is None:
-            print(f"Could not find channel with ID: {TARGET_CHANNEL_ID}")
+@client.event
+async def on_message(message):
+    if TARGET_CHANNEL_ID:
+        if message.channel.id != TARGET_CHANNEL_ID or message.author == client.user:
             return
+    elif message.author == client.user:
+        return
 
-        message = await channel.fetch_message(TARGET_MESSAGE_ID)
-        if message is None:
-            print(f"Could not find message with ID: {TARGET_MESSAGE_ID}")
-            return
+    content = message.content.lower()  # Convert to lowercase for case-insensitive matching
+    for keyword in KEYWORDS:
+        if keyword.lower() in content:
+            try:
+                await message.add_reaction(EMOJI)
+                print(f"Reacted to message in {message.channel.name} by {message.author.name}: '{message.content}' (matched '{keyword}')")
+                # Optionally, add a delay here to avoid rapid reactions if multiple keywords are found quickly
+                # await asyncio.sleep(0.5)
+                break  # React only once per message if multiple keywords match (optional)
+            except discord.HTTPException as e:
+                print(f"Failed to react: {e}")
+            break  # Stop checking other keywords after reacting (optional)
 
-        for _ in range(REACTION_COUNT):
-            await message.add_reaction(EMOJI)
-            await asyncio.sleep(0.3)  # Delay to avoid rate limiting
-        print(f"Successfully added {REACTION_COUNT} {EMOJI} reactions to message {TARGET_MESSAGE_ID} in channel {TARGET_CHANNEL_ID}")
-
-    except discord.HTTPException as e:
-        print(f"Failed to react: {e}")
-    except discord.NotFound:
-        print("Could not find the specified channel or message.")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-client.run(TOKEN, bot=False)
+client.run(TOKEN)
